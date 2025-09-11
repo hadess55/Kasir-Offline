@@ -55,8 +55,8 @@ class _ProductsPageState extends State<ProductsPage> {
       appBar: AppBar(
         systemOverlayStyle: const SystemUiOverlayStyle(
           statusBarColor: Color(0xFF5A54FF),
-          statusBarIconBrightness: Brightness.light, // ikon putih (Android)
-          statusBarBrightness: Brightness.dark, // teks putih (iOS)
+          statusBarIconBrightness: Brightness.light,
+          statusBarBrightness: Brightness.dark,
         ),
         elevation: 0,
         backgroundColor: const Color(0xFF5A54FF),
