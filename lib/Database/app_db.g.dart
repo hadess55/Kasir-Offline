@@ -877,6 +877,16 @@ class $SalesTable extends Sales with TableInfo<$SalesTable, Sale> {
     type: DriftSqlType.double,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _totalMeta = const VerificationMeta('total');
+  @override
+  late final GeneratedColumn<double> total = GeneratedColumn<double>(
+    'total',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _paidMeta = const VerificationMeta('paid');
   @override
   late final GeneratedColumn<double> paid = GeneratedColumn<double>(
@@ -896,7 +906,14 @@ class $SalesTable extends Sales with TableInfo<$SalesTable, Sale> {
     requiredDuringInsert: true,
   );
   @override
-  List<GeneratedColumn> get $columns => [id, createdAt, subtotal, paid, change];
+  List<GeneratedColumn> get $columns => [
+    id,
+    createdAt,
+    subtotal,
+    total,
+    paid,
+    change,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -925,6 +942,12 @@ class $SalesTable extends Sales with TableInfo<$SalesTable, Sale> {
       );
     } else if (isInserting) {
       context.missing(_subtotalMeta);
+    }
+    if (data.containsKey('total')) {
+      context.handle(
+        _totalMeta,
+        total.isAcceptableOrUnknown(data['total']!, _totalMeta),
+      );
     }
     if (data.containsKey('paid')) {
       context.handle(
@@ -963,6 +986,10 @@ class $SalesTable extends Sales with TableInfo<$SalesTable, Sale> {
         DriftSqlType.double,
         data['${effectivePrefix}subtotal'],
       )!,
+      total: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}total'],
+      )!,
       paid: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}paid'],
@@ -984,12 +1011,14 @@ class Sale extends DataClass implements Insertable<Sale> {
   final int id;
   final DateTime createdAt;
   final double subtotal;
+  final double total;
   final double paid;
   final double change;
   const Sale({
     required this.id,
     required this.createdAt,
     required this.subtotal,
+    required this.total,
     required this.paid,
     required this.change,
   });
@@ -999,6 +1028,7 @@ class Sale extends DataClass implements Insertable<Sale> {
     map['id'] = Variable<int>(id);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['subtotal'] = Variable<double>(subtotal);
+    map['total'] = Variable<double>(total);
     map['paid'] = Variable<double>(paid);
     map['change'] = Variable<double>(change);
     return map;
@@ -1009,6 +1039,7 @@ class Sale extends DataClass implements Insertable<Sale> {
       id: Value(id),
       createdAt: Value(createdAt),
       subtotal: Value(subtotal),
+      total: Value(total),
       paid: Value(paid),
       change: Value(change),
     );
@@ -1023,6 +1054,7 @@ class Sale extends DataClass implements Insertable<Sale> {
       id: serializer.fromJson<int>(json['id']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       subtotal: serializer.fromJson<double>(json['subtotal']),
+      total: serializer.fromJson<double>(json['total']),
       paid: serializer.fromJson<double>(json['paid']),
       change: serializer.fromJson<double>(json['change']),
     );
@@ -1034,6 +1066,7 @@ class Sale extends DataClass implements Insertable<Sale> {
       'id': serializer.toJson<int>(id),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'subtotal': serializer.toJson<double>(subtotal),
+      'total': serializer.toJson<double>(total),
       'paid': serializer.toJson<double>(paid),
       'change': serializer.toJson<double>(change),
     };
@@ -1043,12 +1076,14 @@ class Sale extends DataClass implements Insertable<Sale> {
     int? id,
     DateTime? createdAt,
     double? subtotal,
+    double? total,
     double? paid,
     double? change,
   }) => Sale(
     id: id ?? this.id,
     createdAt: createdAt ?? this.createdAt,
     subtotal: subtotal ?? this.subtotal,
+    total: total ?? this.total,
     paid: paid ?? this.paid,
     change: change ?? this.change,
   );
@@ -1057,6 +1092,7 @@ class Sale extends DataClass implements Insertable<Sale> {
       id: data.id.present ? data.id.value : this.id,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       subtotal: data.subtotal.present ? data.subtotal.value : this.subtotal,
+      total: data.total.present ? data.total.value : this.total,
       paid: data.paid.present ? data.paid.value : this.paid,
       change: data.change.present ? data.change.value : this.change,
     );
@@ -1068,6 +1104,7 @@ class Sale extends DataClass implements Insertable<Sale> {
           ..write('id: $id, ')
           ..write('createdAt: $createdAt, ')
           ..write('subtotal: $subtotal, ')
+          ..write('total: $total, ')
           ..write('paid: $paid, ')
           ..write('change: $change')
           ..write(')'))
@@ -1075,7 +1112,7 @@ class Sale extends DataClass implements Insertable<Sale> {
   }
 
   @override
-  int get hashCode => Object.hash(id, createdAt, subtotal, paid, change);
+  int get hashCode => Object.hash(id, createdAt, subtotal, total, paid, change);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1083,6 +1120,7 @@ class Sale extends DataClass implements Insertable<Sale> {
           other.id == this.id &&
           other.createdAt == this.createdAt &&
           other.subtotal == this.subtotal &&
+          other.total == this.total &&
           other.paid == this.paid &&
           other.change == this.change);
 }
@@ -1091,12 +1129,14 @@ class SalesCompanion extends UpdateCompanion<Sale> {
   final Value<int> id;
   final Value<DateTime> createdAt;
   final Value<double> subtotal;
+  final Value<double> total;
   final Value<double> paid;
   final Value<double> change;
   const SalesCompanion({
     this.id = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.subtotal = const Value.absent(),
+    this.total = const Value.absent(),
     this.paid = const Value.absent(),
     this.change = const Value.absent(),
   });
@@ -1104,6 +1144,7 @@ class SalesCompanion extends UpdateCompanion<Sale> {
     this.id = const Value.absent(),
     this.createdAt = const Value.absent(),
     required double subtotal,
+    this.total = const Value.absent(),
     required double paid,
     required double change,
   }) : subtotal = Value(subtotal),
@@ -1113,6 +1154,7 @@ class SalesCompanion extends UpdateCompanion<Sale> {
     Expression<int>? id,
     Expression<DateTime>? createdAt,
     Expression<double>? subtotal,
+    Expression<double>? total,
     Expression<double>? paid,
     Expression<double>? change,
   }) {
@@ -1120,6 +1162,7 @@ class SalesCompanion extends UpdateCompanion<Sale> {
       if (id != null) 'id': id,
       if (createdAt != null) 'created_at': createdAt,
       if (subtotal != null) 'subtotal': subtotal,
+      if (total != null) 'total': total,
       if (paid != null) 'paid': paid,
       if (change != null) 'change': change,
     });
@@ -1129,6 +1172,7 @@ class SalesCompanion extends UpdateCompanion<Sale> {
     Value<int>? id,
     Value<DateTime>? createdAt,
     Value<double>? subtotal,
+    Value<double>? total,
     Value<double>? paid,
     Value<double>? change,
   }) {
@@ -1136,6 +1180,7 @@ class SalesCompanion extends UpdateCompanion<Sale> {
       id: id ?? this.id,
       createdAt: createdAt ?? this.createdAt,
       subtotal: subtotal ?? this.subtotal,
+      total: total ?? this.total,
       paid: paid ?? this.paid,
       change: change ?? this.change,
     );
@@ -1153,6 +1198,9 @@ class SalesCompanion extends UpdateCompanion<Sale> {
     if (subtotal.present) {
       map['subtotal'] = Variable<double>(subtotal.value);
     }
+    if (total.present) {
+      map['total'] = Variable<double>(total.value);
+    }
     if (paid.present) {
       map['paid'] = Variable<double>(paid.value);
     }
@@ -1168,6 +1216,7 @@ class SalesCompanion extends UpdateCompanion<Sale> {
           ..write('id: $id, ')
           ..write('createdAt: $createdAt, ')
           ..write('subtotal: $subtotal, ')
+          ..write('total: $total, ')
           ..write('paid: $paid, ')
           ..write('change: $change')
           ..write(')'))
@@ -3062,6 +3111,7 @@ typedef $$SalesTableCreateCompanionBuilder =
       Value<int> id,
       Value<DateTime> createdAt,
       required double subtotal,
+      Value<double> total,
       required double paid,
       required double change,
     });
@@ -3070,6 +3120,7 @@ typedef $$SalesTableUpdateCompanionBuilder =
       Value<int> id,
       Value<DateTime> createdAt,
       Value<double> subtotal,
+      Value<double> total,
       Value<double> paid,
       Value<double> change,
     });
@@ -3117,6 +3168,11 @@ class $$SalesTableFilterComposer extends Composer<_$AppDb, $SalesTable> {
 
   ColumnFilters<double> get subtotal => $composableBuilder(
     column: $table.subtotal,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get total => $composableBuilder(
+    column: $table.total,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3179,6 +3235,11 @@ class $$SalesTableOrderingComposer extends Composer<_$AppDb, $SalesTable> {
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get total => $composableBuilder(
+    column: $table.total,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get paid => $composableBuilder(
     column: $table.paid,
     builder: (column) => ColumnOrderings(column),
@@ -3206,6 +3267,9 @@ class $$SalesTableAnnotationComposer extends Composer<_$AppDb, $SalesTable> {
 
   GeneratedColumn<double> get subtotal =>
       $composableBuilder(column: $table.subtotal, builder: (column) => column);
+
+  GeneratedColumn<double> get total =>
+      $composableBuilder(column: $table.total, builder: (column) => column);
 
   GeneratedColumn<double> get paid =>
       $composableBuilder(column: $table.paid, builder: (column) => column);
@@ -3270,12 +3334,14 @@ class $$SalesTableTableManager
                 Value<int> id = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<double> subtotal = const Value.absent(),
+                Value<double> total = const Value.absent(),
                 Value<double> paid = const Value.absent(),
                 Value<double> change = const Value.absent(),
               }) => SalesCompanion(
                 id: id,
                 createdAt: createdAt,
                 subtotal: subtotal,
+                total: total,
                 paid: paid,
                 change: change,
               ),
@@ -3284,12 +3350,14 @@ class $$SalesTableTableManager
                 Value<int> id = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 required double subtotal,
+                Value<double> total = const Value.absent(),
                 required double paid,
                 required double change,
               }) => SalesCompanion.insert(
                 id: id,
                 createdAt: createdAt,
                 subtotal: subtotal,
+                total: total,
                 paid: paid,
                 change: change,
               ),

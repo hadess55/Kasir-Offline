@@ -16,6 +16,7 @@ class Sales extends Table {
   IntColumn get id => integer().autoIncrement()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   RealColumn get subtotal => real()(); // total belanja
+  RealColumn get total => real().withDefault(const Constant(0))();
   RealColumn get paid => real()(); // uang diterima
   RealColumn get change => real()(); // kembalian
 }
@@ -47,7 +48,7 @@ class AppDb extends _$AppDb {
   AppDb() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -73,7 +74,12 @@ class AppDb extends _$AppDb {
       );
     },
     onUpgrade: (m, from, to) async {
-      // sesuaikan kalau kamu butuh migrasi
+      if (from < 3) {
+        await m.addColumn(sales, sales.total);
+        await customStatement(
+          'UPDATE sales SET total = subtotal WHERE total IS NULL;',
+        );
+      }
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON;');
@@ -153,9 +159,11 @@ extension SalesDao on AppDb {
     required List<SaleItemInput> items,
   }) async {
     return transaction(() async {
+      final total = subtotal;
       final saleId = await into(sales).insert(
         SalesCompanion.insert(
           subtotal: subtotal,
+          total: Value(total),
           paid: paid,
           change: paid - subtotal,
         ),

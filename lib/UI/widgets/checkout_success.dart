@@ -17,6 +17,8 @@ class ReceiptItem {
     required this.qty,
     required this.price,
   });
+
+  double get total => qty * price;
 }
 
 // ==== API yang kamu panggil dari Kasir ====
@@ -260,7 +262,7 @@ class _CheckoutSuccessSheet extends StatelessWidget {
             child: Icon(
               Icons.check_circle_rounded,
               size: 44,
-              color: scheme.primary,
+              color: const Color(0xFF5A54FF),
             ),
           ),
           const SizedBox(height: 12),
@@ -335,8 +337,8 @@ class _CheckoutSuccessSheet extends StatelessWidget {
               icon: const Icon(Icons.add_task_rounded),
               label: const Text('Transaksi baru'),
               style: FilledButton.styleFrom(
-                backgroundColor: scheme.primary,
-                foregroundColor: scheme.onPrimary,
+                backgroundColor: const Color(0xFF5A54FF),
+                foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),

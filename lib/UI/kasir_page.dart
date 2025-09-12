@@ -250,16 +250,19 @@ class _KasirPageState extends State<KasirPage> {
       ),
 
       // ===== Bottom cart bar =====
+      // di KasirPage (parent)
       bottomNavigationBar: _CartBar(
         subtotal: _subtotal,
         currency: _currency,
         itemCount: _cart.values.fold<int>(0, (n, l) => n + l.qty),
+        // di KasirPage (parent)
         onTap: _cart.isEmpty
             ? null
             : () {
+                final parentCtx = context; // <- simpan context halaman
+
                 showModalBottomSheet(
-                  context: context,
-                  showDragHandle: true,
+                  context: parentCtx,
                   isScrollControlled: true,
                   backgroundColor: Colors.white,
                   shape: const RoundedRectangleBorder(
@@ -271,18 +274,58 @@ class _KasirPageState extends State<KasirPage> {
                     lines: _cart.values.toList(),
                     currency: _currency,
                     onQtyChanged: (id, q) => _setQty(id, q),
-                    onRemove: (id) => _removeLine(id),
+                    onRemove: _removeLine,
                     onClear: () {
                       setState(() => _cart.clear());
-                      Navigator.pop(context);
+                      Navigator.of(parentCtx).pop(); // <-- pakai parentCtx
                     },
-                    onCheckout: (paid) {
-                      // TODO: simpan transaksi ke DB di sini kalau table sudah siap
-                      setState(() => _cart.clear());
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Transaksi selesai')),
+                    onCheckout: (paid) async {
+                      debugPrint('checkout tapped: paid=$paid');
+                      final itemsForDb = _cart.values
+                          .map(
+                            (l) => SaleItemInput(
+                              l.product.id,
+                              l.qty,
+                              l.product.price,
+                            ),
+                          )
+                          .toList();
+                      final subtotal = _cart.values.fold<double>(
+                        0,
+                        (s, l) => s + l.product.price * l.qty,
                       );
+
+                      final saleId = await widget.db.createSale(
+                        subtotal: subtotal,
+                        paid: paid,
+                        items: itemsForDb,
+                      );
+                      if (!mounted) return;
+
+                      // 2) tutup sheet keranjang dengan parentCtx
+                      Navigator.of(parentCtx).pop();
+
+                      // 3) panggil popup sukses di frame berikutnya (hindari bentrok animasi)
+                      WidgetsBinding.instance.addPostFrameCallback((_) async {
+                        await showCheckoutSuccess(
+                          parentCtx,
+                          currency: _currency,
+                          subtotal: subtotal,
+                          paid: paid,
+                          itemCount: itemsForDb.length,
+                          saleId: saleId,
+                          items: _cart.values
+                              .map(
+                                (l) => ReceiptItem(
+                                  name: l.product.name,
+                                  qty: l.qty,
+                                  price: l.product.price,
+                                ),
+                              )
+                              .toList(),
+                          onNewSale: () => setState(() => _cart.clear()),
+                        );
+                      });
                     },
                   ),
                 );
@@ -555,7 +598,7 @@ class _CartSheet extends StatefulWidget {
   final void Function(int productId, int qty) onQtyChanged;
   final void Function(int productId) onRemove;
   final VoidCallback onClear;
-  final void Function(double paid) onCheckout;
+  final Future<void> Function(double paid) onCheckout;
   const _CartSheet({
     required this.lines,
     required this.currency,
@@ -753,32 +796,7 @@ class _CartSheetState extends State<_CartSheet> {
                     child: ElevatedButton.icon(
                       onPressed: _canCheckout
                           ? () async {
-                              // (Opsional) simpan transaksi ke DB di sini.
-                              await showCheckoutSuccess(
-                                context,
-                                currency: widget.currency,
-                                subtotal: _subtotal, // double
-                                paid:
-                                    _paid, // double dari TextField "Uang diterima"
-                                itemCount: _lines.length,
-                                onNewSale: () {
-                                  // reset keranjang + sinkron ke parent
-                                  setState(() {
-                                    _lines.clear();
-                                    _payC.clear();
-                                  });
-                                  widget.onClear();
-
-                                  // (opsional) tutup sheet keranjang
-                                  Navigator.of(context).maybePop();
-                                },
-                                onPrint: () {
-                                  // TODO: panggil logika cetak struk
-                                },
-                                onShare: () {
-                                  // TODO: bagikan struk (share_plus) atau preview
-                                },
-                              );
+                              await widget.onCheckout(_paid);
                             }
                           : null,
                       icon: const Icon(Icons.check_circle_outline),
