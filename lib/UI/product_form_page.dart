@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:drift/drift.dart' show Value;
 import '../Database/app_db.dart';
 import '../utils/image_storage.dart';
+import 'widgets/nice_snack.dart';
 
 class ProductFormPage extends StatefulWidget {
   final AppDb db;
@@ -63,6 +64,7 @@ class _ProductFormPageState extends State<ProductFormPage> {
     return showDialog<String>(
       context: ctx,
       builder: (_) => AlertDialog(
+        backgroundColor: Colors.white,
         title: const Text('Kategori baru'),
         content: TextField(
           controller: c,
@@ -75,6 +77,9 @@ class _ProductFormPageState extends State<ProductFormPage> {
             child: const Text('Batal'),
           ),
           FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF5A54FF),
+            ),
             onPressed: () => Navigator.pop(ctx, c.text),
             child: const Text('Simpan'),
           ),
@@ -97,10 +102,9 @@ class _ProductFormPageState extends State<ProductFormPage> {
           .into(widget.db.products)
           .insert(
             ProductsCompanion.insert(
-              name: name, // non-nullable → langsung isi
-              price: price, // non-nullable → langsung isi
+              name: name,
+              price: price,
               isActive: Value(_available),
-              // kalau kolommu nullable/opsional → pakai Value(...)
               categoryId: Value(_categoryId),
               imagePath: Value(imagePath),
               thumbPath: Value(thumbPath),
@@ -124,11 +128,15 @@ class _ProductFormPageState extends State<ProductFormPage> {
           );
     }
 
-    if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Produk disimpan')));
-    Navigator.pop(context);
+    try {
+      if (!mounted) return;
+      Navigator.pop(context, widget.existing == null ? 'created' : 'updated');
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal menyimpan: $e')));
+    }
   }
 
   @override
@@ -234,6 +242,8 @@ class _ProductFormPageState extends State<ProductFormPage> {
                         value: _categoryId,
                         isExpanded: true,
                         decoration: _input('Kategori'),
+                        dropdownColor: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
                         items: [
                           const DropdownMenuItem(
                             value: null,

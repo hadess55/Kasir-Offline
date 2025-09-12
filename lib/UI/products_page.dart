@@ -7,6 +7,7 @@ import '../Database/app_db.dart';
 import 'product_form_page.dart';
 import '../services/product_service.dart';
 import 'widgets/chip_cat.dart';
+import 'widgets/nice_snack.dart';
 import 'package:flutter/services.dart';
 
 class ProductsPage extends StatefulWidget {
@@ -19,6 +20,25 @@ class ProductsPage extends StatefulWidget {
 }
 
 class _ProductsPageState extends State<ProductsPage> {
+  void _handleFormResult(dynamic res) {
+    if (!mounted || res == null) return;
+    if (res == 'created') {
+      showProductSaved(context);
+    } else if (res == 'updated') {
+      showProductUpdated(context);
+    }
+  }
+
+  Future<void> _openForm({Product? p}) async {
+    final res = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ProductFormPage(db: widget.db, existing: p),
+      ),
+    );
+    _handleFormResult(res);
+  }
+
   final _searchC = TextEditingController();
   String _query = '';
 
@@ -117,10 +137,11 @@ class _ProductsPageState extends State<ProductsPage> {
 
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
-          await Navigator.push(
+          final res = await Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => ProductFormPage(db: db)),
+            MaterialPageRoute(builder: (_) => ProductFormPage(db: widget.db)),
           );
+          _handleFormResult(res);
         },
         backgroundColor: const Color(0xFF5A54FF),
         foregroundColor: Colors.white,
@@ -241,13 +262,14 @@ class _ProductsPageState extends State<ProductsPage> {
                         p: p,
                         currency: _currency,
                         onTap: () async {
-                          await Navigator.push(
+                          final res = await Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (_) =>
-                                  ProductFormPage(db: db, existing: p),
+                                  ProductFormPage(db: widget.db, existing: p),
                             ),
                           );
+                          _handleFormResult(res);
                         },
                         onDelete: () => _confirmDelete(context, db, p),
                         onArchive: () async {
@@ -295,11 +317,8 @@ class _ProductsPageState extends State<ProductsPage> {
 
     try {
       await ProductService.deleteProduct(db, p);
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Produk berhasil dihapus')),
-        );
-      }
+      if (!mounted) return;
+      showProductDeleted(context);
     } on ProductInUseException {
       if (!context.mounted) return;
       final arsip = await showDialog<bool>(

@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 // Data item untuk struk
 class ReceiptItem {
@@ -37,6 +38,10 @@ Future<void> showCheckoutSuccess(
 }) async {
   final kembalian = (paid >= subtotal) ? (paid - subtotal) : 0.0;
   HapticFeedback.mediumImpact();
+
+  final player = AudioPlayer();
+  player.play(AssetSource('sfx/success.mp3'));
+  player.onPlayerComplete.first.then((_) => player.dispose());
 
   await showModalBottomSheet(
     context: context,
