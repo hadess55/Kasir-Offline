@@ -129,8 +129,6 @@ class _RiwayatPageState extends State<RiwayatPage> {
     final items = await _loadItems(row.sale.id);
     if (!mounted) return;
 
-    final scheme = Theme.of(context).colorScheme;
-
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -271,7 +269,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Riwayat',
+          'RIWAYAT',
           style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.0),
         ),
         backgroundColor: const Color(0xFF5A54FF),

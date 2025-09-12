@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 // === tambahkan untuk PDF/print/share ===
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:audioplayers/audioplayers.dart';
 
 // Data item untuk struk

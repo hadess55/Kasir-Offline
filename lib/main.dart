@@ -3,6 +3,7 @@ import 'Database/app_db.dart';
 import 'UI/products_page.dart';
 import 'UI/kasir_page.dart';
 import 'UI/riwayat_page.dart';
+import 'UI/pembukuan_page.dart';
 import 'package:flutter/services.dart';
 
 void main() {
@@ -40,6 +41,7 @@ class _POSAppState extends State<POSApp> {
       ProductsPage(db: db),
       KasirPage(db: db),
       RiwayatPage(db: db),
+      PembukuanPage(db: db),
     ];
 
     return MaterialApp(
@@ -102,6 +104,11 @@ class _POSAppState extends State<POSApp> {
                   icon: Icon(Icons.receipt_long_outlined, color: Colors.white),
                   selectedIcon: Icon(Icons.receipt_long),
                   label: 'Riwayat',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.book, color: Colors.white),
+                  selectedIcon: Icon(Icons.book_rounded),
+                  label: 'Buku',
                 ),
               ],
             ),

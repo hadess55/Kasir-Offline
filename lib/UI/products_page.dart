@@ -29,7 +29,7 @@ class _ProductsPageState extends State<ProductsPage> {
     }
   }
 
-  Future<void> _openForm({Product? p}) async {
+  Future<void> openForm({Product? p}) async {
     final res = await Navigator.push(
       context,
       MaterialPageRoute(

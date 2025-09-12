@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 import 'package:drift/drift.dart' show Value;
 import '../Database/app_db.dart';
 import '../utils/image_storage.dart';
-import 'widgets/nice_snack.dart';
 
 class ProductFormPage extends StatefulWidget {
   final AppDb db;
