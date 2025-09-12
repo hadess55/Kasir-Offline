@@ -7,6 +7,10 @@ import 'package:intl/intl.dart';
 import '../Database/app_db.dart';
 import 'widgets/chip_cat.dart';
 import 'widgets/checkout_success.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:printing/printing.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'widgets/checkout_success.dart' show ReceiptItem;
 
 class KasirPage extends StatefulWidget {
   final AppDb db;
@@ -280,7 +284,7 @@ class _KasirPageState extends State<KasirPage> {
                       Navigator.of(parentCtx).pop(); // <-- pakai parentCtx
                     },
                     onCheckout: (paid) async {
-                      debugPrint('checkout tapped: paid=$paid');
+                      // 1) siapkan data untuk DB
                       final itemsForDb = _cart.values
                           .map(
                             (l) => SaleItemInput(
@@ -290,42 +294,76 @@ class _KasirPageState extends State<KasirPage> {
                             ),
                           )
                           .toList();
+
                       final subtotal = _cart.values.fold<double>(
                         0,
                         (s, l) => s + l.product.price * l.qty,
                       );
 
+                      // 2) simpan transaksi
                       final saleId = await widget.db.createSale(
                         subtotal: subtotal,
                         paid: paid,
                         items: itemsForDb,
                       );
+
                       if (!mounted) return;
+                      final ctx =
+                          context; // hindari "Don't use BuildContext across async gaps"
 
-                      // 2) tutup sheet keranjang dengan parentCtx
-                      Navigator.of(parentCtx).pop();
+                      // 3) siapkan item struk
+                      final receiptItems = _cart.values
+                          .map(
+                            (l) => ReceiptItem(
+                              name: l.product.name,
+                              qty: l.qty,
+                              price: l.product.price,
+                            ),
+                          )
+                          .toList();
 
-                      // 3) panggil popup sukses di frame berikutnya (hindari bentrok animasi)
-                      WidgetsBinding.instance.addPostFrameCallback((_) async {
-                        await showCheckoutSuccess(
-                          parentCtx,
-                          currency: _currency,
-                          subtotal: subtotal,
-                          paid: paid,
-                          itemCount: itemsForDb.length,
-                          saleId: saleId,
-                          items: _cart.values
-                              .map(
-                                (l) => ReceiptItem(
-                                  name: l.product.name,
-                                  qty: l.qty,
-                                  price: l.product.price,
-                                ),
-                              )
-                              .toList(),
-                          onNewSale: () => setState(() => _cart.clear()),
-                        );
-                      });
+                      // 4) (opsional) tutup sheet keranjang
+                      Navigator.of(ctx).pop();
+
+                      // 5) tampilkan sheet sukses + callback bagikan/cetak
+                      await showCheckoutSuccess(
+                        ctx,
+                        currency: _currency,
+                        subtotal: subtotal,
+                        paid: paid,
+                        itemCount: receiptItems.length,
+                        saleId: saleId,
+                        items: receiptItems,
+                        onNewSale: () => setState(() => _cart.clear()),
+
+                        // === BAGIKAN (teks) ===
+                        onShare: () async {
+                          final text = _buildReceiptText(
+                            saleId: saleId,
+                            items: receiptItems,
+                            subtotal: subtotal,
+                            paid: paid,
+                            change: paid - subtotal,
+                            currency: _currency,
+                          );
+                          await Share.share(text);
+                        },
+
+                        // === CETAK (PDF sederhana) ===
+                        onPrint: () async {
+                          final doc = _buildReceiptPdf(
+                            saleId: saleId,
+                            items: receiptItems,
+                            subtotal: subtotal,
+                            paid: paid,
+                            change: paid - subtotal,
+                            currency: _currency,
+                          );
+                          await Printing.layoutPdf(
+                            onLayout: (_) async => doc.save(),
+                          );
+                        },
+                      );
                     },
                   ),
                 );
@@ -369,42 +407,6 @@ class _SquareIconButton extends StatelessWidget {
       child: box,
     );
     return tooltip == null ? child : Tooltip(message: tooltip!, child: child);
-  }
-}
-
-class _ChipCat extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-  const _ChipCat({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return ChoiceChip(
-      label: Text(label),
-      selected: selected,
-      onSelected: (_) => onTap(),
-      backgroundColor: Colors.white,
-      selectedColor: Colors.white,
-      side: BorderSide(
-        color: selected ? scheme.primary : scheme.outlineVariant,
-        width: selected ? 1 : 1,
-      ),
-      labelStyle: TextStyle(
-        color: selected ? scheme.primary : scheme.onSurface,
-        fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-      ),
-      showCheckmark: selected,
-      checkmarkColor: scheme.primary,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      labelPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-    );
   }
 }
 
@@ -883,7 +885,6 @@ class AddButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final fs = fontSize ?? (compact ? 12.0 : 14.0);
 
     return FilledButton.tonal(
@@ -907,4 +908,95 @@ class AddButton extends StatelessWidget {
       child: Text(label),
     );
   }
+}
+
+String _buildReceiptText({
+  required int saleId,
+  required List<ReceiptItem> items,
+  required double subtotal,
+  required double paid,
+  required double change,
+  required NumberFormat currency,
+}) {
+  final b = StringBuffer()
+    ..writeln('STRUK #$saleId')
+    ..writeln(DateTime.now())
+    ..writeln('------------------------------');
+
+  for (final it in items) {
+    b.writeln('${it.name}  x${it.qty}  @${currency.format(it.price)}');
+  }
+
+  b
+    ..writeln('------------------------------')
+    ..writeln('Subtotal : ${currency.format(subtotal)}')
+    ..writeln('Dibayar  : ${currency.format(paid)}')
+    ..writeln('Kembalian: ${currency.format(change)}');
+
+  return b.toString();
+}
+
+pw.Document _buildReceiptPdf({
+  required int saleId,
+  required List<ReceiptItem> items,
+  required double subtotal,
+  required double paid,
+  required double change,
+  required NumberFormat currency,
+}) {
+  final doc = pw.Document();
+
+  doc.addPage(
+    pw.Page(
+      build: (ctx) => pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            'STRUK #$saleId',
+            style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+          ),
+          pw.SizedBox(height: 4),
+          pw.Text(
+            DateTime.now().toString(),
+            style: const pw.TextStyle(fontSize: 10),
+          ),
+          pw.SizedBox(height: 8),
+          pw.Divider(),
+          ...items.map(
+            (it) => pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Expanded(child: pw.Text('${it.name}  x${it.qty}')),
+                pw.Text(currency.format(it.price)),
+              ],
+            ),
+          ),
+          pw.Divider(),
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [pw.Text('Subtotal'), pw.Text(currency.format(subtotal))],
+          ),
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [pw.Text('Dibayar'), pw.Text(currency.format(paid))],
+          ),
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text(
+                'Kembalian',
+                style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+              ),
+              pw.Text(
+                currency.format(change),
+                style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+              ),
+            ],
+          ),
+        ],
+      ),
+    ),
+  );
+
+  return doc;
 }
