@@ -4,6 +4,7 @@ import 'UI/products_page.dart';
 import 'UI/kasir_page.dart';
 import 'UI/riwayat_page.dart';
 import 'UI/pembukuan_page.dart';
+import 'UI/splash_screen.dart'; // <— TAMBAH INI
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
@@ -11,15 +12,34 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
-      statusBarColor: Color(0xFF5A54FF), // samakan dengan warna AppBar
-      statusBarIconBrightness:
-          Brightness.light, // ikon status bar putih (Android)
-      statusBarBrightness: Brightness.dark, // iOS: teks status bar putih
+      statusBarColor: Color(0xFF5A54FF),
+      statusBarIconBrightness: Brightness.light,
+      statusBarBrightness: Brightness.dark,
     ),
   );
-  runApp(const POSApp());
+  runApp(const SplashApp()); // <— GANTI: mulai dari splash
 }
 
+/// MaterialApp kecil untuk menampilkan Splash, lalu berpindah ke POSApp.
+/// (POSApp milikmu tetap seperti sekarang — tidak perlu diubah.)
+class SplashApp extends StatelessWidget {
+  const SplashApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Kasir Offline',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        colorSchemeSeed: const Color(0xFF5A54FF),
+        useMaterial3: true,
+      ),
+      home: const SplashScreen(),
+    );
+  }
+}
+
+// ====== Di bawah ini adalah POSApp milikmu (TIDAK DIUBAH) ======
 class POSApp extends StatefulWidget {
   const POSApp({super.key});
   @override
@@ -27,7 +47,7 @@ class POSApp extends StatefulWidget {
 }
 
 class _POSAppState extends State<POSApp> {
-  final db = AppDb(); // satu instance app-wide
+  final db = AppDb();
   int _index = 0;
 
   final _currency = NumberFormat.currency(
@@ -58,12 +78,8 @@ class _POSAppState extends State<POSApp> {
         scaffoldBackgroundColor: Colors.white,
         useMaterial3: true,
       ),
-
-      // ⬇⬇ Scaffold diletakkan di SINI (di dalam MaterialApp.home)
       home: Scaffold(
         body: SafeArea(top: false, child: pages[_index]),
-
-        // bottom nav harus di Scaffold, bukan di MaterialApp
         bottomNavigationBar: Theme(
           data: Theme.of(context).copyWith(
             navigationBarTheme: NavigationBarThemeData(
