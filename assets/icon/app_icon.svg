@@ -1,0 +1,18 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background squircle -->
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6B64FF"/>
+      <stop offset="1" stop-color="#5A54FF"/>
+    </linearGradient>
+  </defs>
+  <rect x="96" y="96" width="832" height="832" rx="220" fill="url(#g)"/>
+  <!-- Receipt / kasir glyph -->
+  <g fill="#FFFFFF">
+    <!-- struk -->
+    <path d="M332 292c-22 0-40 18-40 40v360c0 14 16 22 27 13l33-26 33 26c8 6 19 6 27 0l33-26 33 26c8 6 19 6 27 0l33-26 33 26c8 6 19 6 27 0l33-26 33 26c11 9 27 1 27-13V332c0-22-18-40-40-40H332zM384 376h256a16 16 0 0 1 0 32H384a16 16 0 0 1 0-32zm0 96h256a16 16 0 0 1 0 32H384a16 16 0 0 1 0-32zm0 96h160a16 16 0 0 1 0 32H384a16 16 0 0 1 0-32z"/>
+    <!-- check mark bulat -->
+    <circle cx="648" cy="624" r="72" fill="#FFFFFF" opacity="0.15"/>
+    <path d="M620 626l24 24 44-44" stroke="#FFFFFF" stroke-width="22" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </g>
+</svg>
