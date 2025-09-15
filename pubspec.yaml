@@ -76,8 +76,8 @@ flutter_launcher_icons:
   remove_alpha_ios: true
 
 flutter_native_splash:
-  color: "#5A54FF" # latar ungu biar senada
-  image: assets/icon/app_icon.png # logo 1024x1024
+  color: "#5A54FF"
+  image: assets/icon/app_icon.png
   android_12:
     color: "#5A54FF"
     image: assets/icon/foreground.png
