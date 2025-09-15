@@ -307,24 +307,37 @@ class _RiwayatPageState extends State<RiwayatPage> {
       body: Column(
         children: [
           // Filter rentang waktu
-          SizedBox(
-            height: 48,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              children: [
-                _chip('Hari ini', _range == _Range.today, () {
-                  setState(() => _range = _Range.today);
-                }),
-                const SizedBox(width: 8),
-                _chip('7 hari', _range == _Range.week, () {
-                  setState(() => _range = _Range.week);
-                }),
-                const SizedBox(width: 8),
-                _chip('Semua', _range == _Range.all, () {
-                  setState(() => _range = _Range.all);
-                }),
-              ],
+          Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              border: Border(
+                bottom: BorderSide(
+                  color: Color(0xFFE9E9EF),
+                  width: 1,
+                ), // garis bawah
+              ),
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: SizedBox(
+              height: 40,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                children: [
+                  _chip('Hari ini', _range == _Range.today, () {
+                    setState(() => _range = _Range.today);
+                  }),
+                  const SizedBox(width: 10),
+                  _chip('7 hari', _range == _Range.week, () {
+                    setState(() => _range = _Range.week);
+                  }),
+                  const SizedBox(width: 10),
+                  _chip('Semua', _range == _Range.all, () {
+                    setState(() => _range = _Range.all);
+                  }),
+                ],
+              ),
             ),
           ),
           const Divider(height: 1),
@@ -392,12 +405,43 @@ class _RiwayatPageState extends State<RiwayatPage> {
 
   // ======= helpers UI =======
   Widget _chip(String label, bool selected, VoidCallback onTap) {
-    return ChoiceChip.elevated(
-      label: Text(label),
-      selected: selected,
-      onSelected: (_) => onTap(),
-      selectedColor: const Color(0xFFE9E6FF),
-      elevation: 0,
+    const primary = Color(0xFF5A54FF);
+    const border = Color(0xFFE9E9EF);
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? primary.withOpacity(.08) : Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: border),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(.03),
+              blurRadius: selected ? 8 : 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (selected) ...[
+              const Icon(Icons.check_rounded, size: 16, color: primary),
+              const SizedBox(width: 6),
+            ],
+            Text(
+              label,
+              style: TextStyle(
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                color: Colors.black87,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

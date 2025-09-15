@@ -15,6 +15,9 @@ import 'widgets/checkout_success.dart' as receipt;
 import 'package:excel/excel.dart' as ex;
 import 'package:drift/drift.dart' as d show OrderingTerm;
 import '../Database/app_db.dart';
+import 'widgets/app_card.dart';
+
+const appPrimary = Color(0xFF5A54FF);
 
 enum _Range { today, week, month, all }
 
@@ -247,28 +250,17 @@ class _PembukuanPageState extends State<PembukuanPage> {
   // == UI ==
   @override
   Widget build(BuildContext context) {
-    final currency = widget.currency;
-
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text(
           'PEMBUKUAN',
           style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.0),
         ),
-        backgroundColor: const Color(0xFF5A54FF),
+        backgroundColor: appPrimary,
         foregroundColor: Colors.white,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
-        ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(10),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: Material(
-              elevation: 6,
-              borderRadius: BorderRadius.circular(22),
-            ),
-          ),
         ),
       ),
       body: SafeArea(
@@ -276,35 +268,32 @@ class _PembukuanPageState extends State<PembukuanPage> {
             ? const Center(child: CircularProgressIndicator())
             : CustomScrollView(
                 slivers: [
-                  // Filter
+                  // ===== Filter chips scrollable (BG putih) =====
                   SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                      child: _FilterBar(
-                        range: _range,
-                        onChanged: (r) {
-                          setState(() => _range = r);
-                          _reload();
-                        },
-                      ),
+                    child: _FilterBar(
+                      range: _range,
+                      onChanged: (r) {
+                        setState(() => _range = r);
+                        _reload();
+                      },
                     ),
                   ),
 
-                  // Stats grid
+                  // ===== Stats grid =====
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                       child: _StatsGrid(
                         transaksi: _rows.length,
                         itemTerjual: _totalItems,
-                        subtotal: currency.format(_sumSubtotal),
-                        dibayar: currency.format(_sumPaid),
-                        kembalian: currency.format(_sumChange),
+                        subtotal: widget.currency.format(_sumSubtotal),
+                        dibayar: widget.currency.format(_sumPaid),
+                        kembalian: widget.currency.format(_sumChange),
                       ),
                     ),
                   ),
 
-                  // Export button
+                  // ===== Export button =====
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
@@ -315,7 +304,7 @@ class _PembukuanPageState extends State<PembukuanPage> {
                           icon: const Icon(Icons.file_download_done_rounded),
                           label: const Text('Export Excel'),
                           style: FilledButton.styleFrom(
-                            backgroundColor: const Color(0xFF5A54FF),
+                            backgroundColor: appPrimary,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
@@ -338,7 +327,7 @@ class _PembukuanPageState extends State<PembukuanPage> {
                     ),
                   ),
 
-                  // List transaksi
+                  // ===== List transaksi (cards putih) =====
                   SliverPadding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
                     sliver: SliverList.separated(
@@ -351,11 +340,11 @@ class _PembukuanPageState extends State<PembukuanPage> {
                           subtitle: DateFormat(
                             'dd MMM yyyy HH:mm',
                           ).format(r.createdAt),
-                          total: currency.format(r.subtotal),
+                          total: widget.currency.format(r.subtotal),
                           itemCount: r.itemCount,
                           onShare: () => _shareSale(r.id),
                           onPrint: () => _printSale(r.id),
-                          onTap: () => _shareSale(r.id), // atau ke detail
+                          onTap: () => _shareSale(r.id),
                         );
                       },
                     ),
@@ -372,28 +361,82 @@ class _FilterBar extends StatelessWidget {
   final ValueChanged<_Range> onChanged;
   const _FilterBar({required this.range, required this.onChanged});
 
+  static const _primary = Color(0xFF5A54FF);
+
   @override
   Widget build(BuildContext context) {
-    final chip = (String label, _Range value) => ChoiceChip(
-      label: Text(label),
-      selected: range == value,
-      onSelected: (_) => onChanged(value),
-      selectedColor: Theme.of(context).colorScheme.primary.withOpacity(.12),
-      labelStyle: TextStyle(
-        fontWeight: range == value ? FontWeight.w700 : FontWeight.w600,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          bottom: BorderSide(
+            color: Color(0xFFE9E9EF), // warna garis
+            width: 2, // ketebalan garis
+          ),
+        ),
       ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        child: Row(
+          children: [
+            _pill('Hari ini', _Range.today),
+            SizedBox(width: 10),
+            _pill('Minggu ini', _Range.week),
+            SizedBox(width: 10),
+            _pill('Bulan ini', _Range.month),
+            SizedBox(width: 10),
+            _pill('Semua', _Range.all),
+          ],
+        ),
+      ),
     );
+  }
 
-    return Wrap(
-      spacing: 10,
-      runSpacing: 10,
-      children: [
-        chip('Hari ini', _Range.today),
-        chip('Minggu ini', _Range.week),
-        chip('Bulan ini', _Range.month),
-        chip('Semua', _Range.all),
-      ],
+  Widget _pill(String label, _Range value) {
+    final selected = range == value;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: () => onChanged(value),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: selected ? _primary.withOpacity(.14) : Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: selected
+                ? _primary.withOpacity(.18)
+                : const Color(0xFFE6E6E6),
+          ),
+          boxShadow: [
+            // lembut, biar tampak “angkat”
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (selected)
+              Padding(
+                padding: const EdgeInsets.only(right: 6),
+                child: Icon(Icons.check_rounded, size: 16, color: _primary),
+              ),
+            Text(
+              label,
+              style: TextStyle(
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -411,32 +454,31 @@ class _StatsGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = Theme.of(context).colorScheme;
-    Widget tile(IconData ico, String label, String value, {Color? bg}) {
-      return Card(
-        elevation: 0,
-        color: bg ?? c.surfaceVariant.withOpacity(.45),
-        surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(ico, size: 22, color: c.primary),
-              const SizedBox(height: 8),
-              Text(label, style: const TextStyle(color: Colors.black54)),
-              const SizedBox(height: 2),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: .2,
-                ),
+    Widget tile(IconData ico, String label, String value) {
+      return AppCard(
+        padding: const EdgeInsets.all(14),
+        margin: EdgeInsets.zero, // biar gridnya rapi
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(
+              Icons.circle, // cuma dipakai sebagai placeholder ukuran
+              size: 0,
+              color: Colors.transparent,
+            ),
+            Icon(ico, size: 22, color: const Color(0xFF5A54FF)),
+            const SizedBox(height: 8),
+            Text(label, style: const TextStyle(color: Colors.black54)),
+            const SizedBox(height: 2),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                letterSpacing: .2,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       );
     }
@@ -445,10 +487,9 @@ class _StatsGrid extends StatelessWidget {
       padding: EdgeInsets.zero,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        mainAxisExtent: 100,
+        mainAxisExtent: 140,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
-        childAspectRatio: 1.45,
       ),
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -457,8 +498,6 @@ class _StatsGrid extends StatelessWidget {
         tile(Icons.shopping_bag_rounded, 'Item terjual', '$itemTerjual'),
         tile(Icons.payments_rounded, 'Subtotal', subtotal),
         tile(Icons.account_balance_wallet_rounded, 'Dibayar', dibayar),
-        // Bisa ganti salah satu dengan kembalian:
-        // tile(Icons.reply_rounded, 'Kembalian', kembalian),
       ],
     );
   }
@@ -481,80 +520,84 @@ class _SaleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = Theme.of(context).colorScheme;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
-      child: Card(
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 12, 12),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: c.primary.withOpacity(.12),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(Icons.receipt_long_rounded, color: c.primary),
+      child: AppCard(
+        // <= pakai AppCard
+        padding: const EdgeInsets.fromLTRB(16, 14, 12, 12),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: const Color(0xFF5A54FF).withOpacity(.12),
+                borderRadius: BorderRadius.circular(12),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 16,
-                      ),
+              child: const Icon(
+                Icons.receipt_long_rounded,
+                color: Color(0xFF5A54FF), // warna brand
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 16,
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(color: Colors.black54),
+                  ),
+                  const SizedBox(height: 2),
+                  const SizedBox(height: 2),
+                  Text(subtitle, style: const TextStyle(color: Colors.black54)),
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  total,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: .2,
+                  ),
+                ),
+                Text(
+                  '$itemCount item',
+                  style: const TextStyle(color: Colors.black45, fontSize: 12),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    IconButton(
+                      tooltip: 'Bagikan',
+                      icon: const Icon(
+                        Icons.ios_share_rounded,
+                        size: 20,
+                        color: Color(0xFF5A54FF),
+                      ),
+                      onPressed: onShare,
+                    ),
+                    IconButton(
+                      tooltip: 'Cetak',
+                      icon: const Icon(
+                        Icons.print_rounded,
+                        size: 20,
+                        color: Color(0xFF5A54FF),
+                      ),
+                      onPressed: onPrint,
                     ),
                   ],
                 ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    total,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: .2,
-                    ),
-                  ),
-                  Text(
-                    '$itemCount item',
-                    style: const TextStyle(color: Colors.black45, fontSize: 12),
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      IconButton(
-                        tooltip: 'Bagikan',
-                        icon: const Icon(Icons.ios_share_rounded, size: 20),
-                        onPressed: onShare,
-                      ),
-                      IconButton(
-                        tooltip: 'Cetak',
-                        icon: const Icon(Icons.print_rounded, size: 20),
-                        onPressed: onPrint,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ],
-          ),
+              ],
+            ),
+          ],
         ),
       ),
     );
