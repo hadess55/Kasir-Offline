@@ -5,6 +5,7 @@ import 'UI/kasir_page.dart';
 import 'UI/riwayat_page.dart';
 import 'UI/pembukuan_page.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,6 +30,12 @@ class _POSAppState extends State<POSApp> {
   final db = AppDb(); // satu instance app-wide
   int _index = 0;
 
+  final _currency = NumberFormat.currency(
+    locale: 'id_ID',
+    symbol: 'Rp',
+    decimalDigits: 0,
+  );
+
   @override
   void dispose() {
     db.close();
@@ -41,7 +48,7 @@ class _POSAppState extends State<POSApp> {
       ProductsPage(db: db),
       KasirPage(db: db),
       RiwayatPage(db: db),
-      PembukuanPage(db: db),
+      PembukuanPage(db: db, currency: _currency),
     ];
 
     return MaterialApp(
@@ -67,7 +74,6 @@ class _POSAppState extends State<POSApp> {
               elevation: 8,
               labelTextStyle: MaterialStateProperty.resolveWith((s) {
                 final selected = s.contains(MaterialState.selected);
-                final cs = Theme.of(context).colorScheme;
                 return TextStyle(
                   fontSize: 12,
                   fontWeight: selected ? FontWeight.w600 : FontWeight.w500,

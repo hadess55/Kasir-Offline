@@ -220,6 +220,7 @@ class _KasirPageState extends State<KasirPage> {
                           childAspectRatio: 3 / 4,
                           crossAxisSpacing: 12,
                           mainAxisSpacing: 12,
+                          mainAxisExtent: 300,
                         ),
                     itemCount: items.length,
                     itemBuilder: (context, i) {

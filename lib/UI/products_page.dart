@@ -219,6 +219,7 @@ class _ProductsPageState extends State<ProductsPage> {
                             childAspectRatio: 3 / 4,
                             crossAxisSpacing: 12,
                             mainAxisSpacing: 12,
+                            mainAxisExtent: 300,
                           ),
                       itemCount: items.length,
                       itemBuilder: (context, i) => _ProductCard(
